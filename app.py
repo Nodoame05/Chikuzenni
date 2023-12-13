@@ -137,39 +137,6 @@ def student_list(uuid):
 
 
 
-# @app.route("/login", methods=["GET", "POST"])
-# def login():
-#     if request.method == "GET":
-#         return render_template("login.html",msg="")
-
-#     email = request.form.get("email")
-#     password = request.form.get("password")
-#     print(f"email:{email},password:{password}")
-#     user = auth.sign_in_with_email_and_password(email, password)
-#     session["usr"] = email
-#     users = db.collection("users").document()
-#     users.set({
-#         "email": email,
-#         "password": password
-#     })
-#     user_id = users.get()
-#     session["id"] = user_id.id
-#     return redirect(url_for("index"))
-    
-
-# @app.route("/", methods=["GET"])
-# def index():
-#    usr = session.get("usr")
-#    if usr == None:
-#        return redirect(url_for("login"))
-#    return render_template("index.html", usr=usr)
-
-# @app.route("/logout")
-# def logout():
-#    del session["usr"]
-#    user_id = session["id"]
-#    db.collection("users").document(user_id).delete()
-#    return redirect(url_for("login"))
 
 
 # run the app.
