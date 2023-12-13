@@ -157,15 +157,15 @@ def student_list(uuid):
 #     return redirect(url_for("index"))
     
 
-#@app.route("/", methods=["GET"])
-#def index():
+# @app.route("/", methods=["GET"])
+# def index():
 #    usr = session.get("usr")
 #    if usr == None:
 #        return redirect(url_for("login"))
 #    return render_template("index.html", usr=usr)
 
-#@app.route("/logout")
-#def logout():
+# @app.route("/logout")
+# def logout():
 #    del session["usr"]
 #    user_id = session["id"]
 #    db.collection("users").document(user_id).delete()
