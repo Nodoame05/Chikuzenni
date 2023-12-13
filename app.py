@@ -137,7 +137,7 @@ def student_list(uuid):
 
 
 
-# @app.route("/login", methods=["GET", "POST"])
+#@app.route("/login", methods=["GET", "POST"])
 # def login():
 #     if request.method == "GET":
 #         return render_template("login.html",msg="")
@@ -170,6 +170,7 @@ def student_list(uuid):
 #    user_id = session["id"]
 #    db.collection("users").document(user_id).delete()
 #    return redirect(url_for("login"))
+
 
 # run the app.
 if __name__ == "__main__":
