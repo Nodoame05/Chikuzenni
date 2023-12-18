@@ -128,16 +128,10 @@ def student_list(uuid):
                         response.append({"doc_id":student_data.id,"name":student_data.get("name"),"uuid":student_data.get("uuid")})
             return response
     return jsonify({"message":"アクセスが拒否されました。"}),403
-
     
 #teacher側POST
 
 #student側POST
-
-
-
-
-
 
 # run the app.
 if __name__ == "__main__":
