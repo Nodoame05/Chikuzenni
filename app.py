@@ -6,18 +6,6 @@ from datetime import date, datetime
 
 app = Flask(__name__)
 
-os.environ["FB_TYPE"] = "service_account"
-os.environ["FB_PROJECt_ID"] = "tikuzenni-abec3"
-os.environ["FB_PRIVATE_KEY"] = "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDP9/Oa4qoZNqDS\njaymO998rWktLki6ryhnNHGHVcqEladEfVtEEnGYghhJBwMb/vIfIhnYr1iGm8F1\n9aT0dqmhPC25ZluYceYuXVBg6k8da7uUTP3P2rTPOKRjZlXkYq/pM3hPzoxtu4pf\nZ38q0lwwfKEGSLEby4nZIh2hVZlePpNuGacVnbv1E3aYy73gkwLq8y6I0ldXUbUR\nj17ezYLUc14YkuHI9kVChvJe/CJ7/YoKxYmtZPE0E11DcSqMchl5uvr/u3wx22eS\njGFKoYXM7LLjKl4pQx/OfdZGDH7qOuXRIUxy9hCCnfM+Oul/FK8fHaj5NpLwMhMl\neAzR5MFnAgMBAAECggEAHGkaHWmjpSgiVkFGebsqL8Uc3jA5fU9abKbsb3mX3f73\nx9J8OlNus0/qc2eC1DtC5l/pOgHSTSlQB4ZUT5U6XS10baR/FNdSg7j5txOrVTCX\ngo32CoQtOTXatz2OtFGLCIeggv6Ljp4VLC1eYQI11+XetZYOo+ZtYX1YoOapugcB\nGJg0NwRAhDe0ZIJ6o/FKO+5Em/EEJ9qVp2L2uYLDe2JSkuGb2adNiXI9fPZbwM1F\nGXesXNptU7WwlLgA842Hm0MfoVb24uRkCMSk7QVUqOO8DanXpVG90CEu7KOSwgza\n8enTOT6TQGAezp3f0m535urGs1d5uw3dv7yhJOl68QKBgQD9fE0cgi+5DUx2o7+e\nc+2pQgxJQ+CD6KGICTAklbhbEv9gsEYik2YYjLjsGO7FKVVi6pDNAyWMPJ3t1Zdg\nEQRx2mZSo9LsrYUQFqWXEQad0LJVgrgG7TTFJ9ZEguKHsmyC5Opr2Og5qD9C0yF1\nPtsad15gyizj2nDBrLMhcTruiQKBgQDSCBCg5r0WIrPpDCegK4o1rriARSfO48Is\n602VB02SLW3B9IS2bGbSlvyxAFD/N1lhPGCay4IZN8QArHukHzpwU/caF37B2Jhd\n6b1H0YQ2PXe6hhuMwevHzA4piwx5Yzj770B7Htlpp6JHkpFkdVgGBL5KyEuefEZ8\nLHEOrOe0bwKBgGJU6NjpS7f+h63yQbAnCofBPmDheuPQx3CtF8bpaZWy3exVFS/u\nfAmD9WxpE57aNOxlT/ynftZS4XTUiZ9TmqTL8yuVr4numhKuplfe2/E2dyeiyN6u\n/+yHUqBLIbNALMXuJV3my9cqBDhZDL6dvoMa0Tq80wMkxt7qrqaHdTP5AoGBAIxp\nMdyvhPeYaZhCNPeCRBqRXOz7zpokb3qiMDKSOEyiLD8/Hb3rCG5+3B3krUGBmjJE\nL/0sUiRTwKgGp33YFrRjnc2GqYokJ/CYw56Qtgeg3jsHTsGyHtNqWolxWPyJ1d2v\nW/czb3uPwxCALszvGdKkNyc9cjhYsrJu74I1G43nAoGBAMHKioy4mAn782SwhGiJ\njPawXstquE33gnH1hXnXnNypxmVrzfH/I4KTTce+G/stIYaKDEz21N6W89hGQfv7\nWwxpNQXy8CwYbAe0lPSyGqZF52BYJD4ZNu31ffAgB4aH45aSdVSTZbE6ugceZ5vu\nl+XU8Q6CMHXlickgrGMbLFax\n-----END PRIVATE KEY-----\n"
-os.environ["FB_CLIENT_EMAIL"] = "firebase-adminsdk-djqvj@tikuzenni-abec3.iam.gserviceaccount.com"
-os.environ["FB_TOKEN_URI"] = "https://oauth2.googleapis.com/token"
-os.environ["FB_APIKEY"] = "AIzaSyBuqPOtJLdDusfyE__R-JtuYFDEQmT6RuU"
-os.environ["FB_AUTH_DOMAIN"] = "tikuzenni-abec3.firebaseapp.com"
-os.environ["FB_STORAGE_BUCKET"] = "tikuzenni-abec3.appspot.com"
-os.environ["FB_MESSAGING_SENDER_ID"] = "72812691936"
-os.environ["FB_APP_ID"] = "1:72812691936:web:ee07eb7ba8ba5bc0ad2b85"
-os.environ["FB_DATABASE_URL"] = "https://tikuzenni-abec3-default-rtdb.firebaseio.com"
-
 #JSONの中身を辞書型に格納
 fs_dict = {
     "type":os.environ["FB_TYPE"],
