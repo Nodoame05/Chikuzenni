@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, render_template, redirect, url_for, session
-import pyrebase, json, os, firebase_admin, uuid
+import pyrebase, json, os, firebase_admin, uuid, bcrypt
 from firebase_admin import credentials, firestore, auth
 from requests.exceptions import RequestException, ConnectionError, HTTPError, Timeout
 from datetime import date, datetime
@@ -31,6 +31,7 @@ cred = credentials.Certificate(fs_dict)
 firebase_admin.initialize_app(cred)
 db = firestore.client()
 app.config['SECRET_KEY'] ="3782c00aae1e468f9809d8d34011a84d"
+# bcrypt = Bcrypt(app) 
 
 
 #teacher側GET
@@ -39,7 +40,10 @@ def teacher_status(uuid):
     token = request.headers.get("token")
     teacher_data = db.collection("teacher").document(uuid).get()
     if token == teacher_data.get("token"):
-        return jsonify({"status":teacher_data.get("status")})
+        status = teacher_data.get("status")
+        status_list = teacher_data.get("status_list")
+        now_status = status_list[status]
+        return jsonify({"status":now_status})
     return jsonify({"message":"アクセスが拒否されました。"}),403 
 
 
@@ -91,7 +95,7 @@ def teacher_list(uuid):
             status = teacher_data.get("status")
             status_list = teacher_data.get("status_list")
             now_status = status_list[status]
-            response.append({"doc_id":teacher_data.id,"name":teacher_data.get("name"),"uuid":teacher_data.get("uuid"),"status":now_status})
+            response.append({"name":teacher_data.get("name"),"uuid":teacher_data.get("uuid"),"status":now_status})
         return response
     return jsonify({"message":"アクセスが拒否されました。"}),403
 
@@ -133,9 +137,58 @@ def student_list(uuid):
             return response
     return jsonify({"message":"アクセスが拒否されました。"}),403
 
+    
 #teacher側POST
+@app.route("/teacher/signup", methods=["POST"])
+def teacher_signup():
+    teacher = request.get_json()
+    teacher_name = teacher.get("name")
+    teacher_email = teacher.get("email")
+    machine_id = teacher.get("machine")
+    teacher_uuid = str(uuid.uuid4())
+    # user_id = teacher.get("id")
+    teacher_password = teacher.get("password")
+    b_password = bytes(teacher_password,"utf-8")
+    salt = bcrypt.gensalt(rounds=12, prefix=b"2b")
+    hash_password = bcrypt.hashpw(b_password,salt)
+    # auth.create_user_with_email_and_password(
+    #     email = teacher_email,
+    #     password = teacher_password
+    # )
+    db.collection("teacher").document(teacher_uuid).set({
+        "available":True,
+        "email":teacher_email,
+        "machine_id":machine_id,
+        "name":teacher_name,
+        "password_hash":hash_password,
+        "status":0,
+        "status_list":[],
+        "subject":[],
+        "uuid":teacher_uuid,
+    })
+# @app.route("/teacher/login", methods=["POST"])
 
-#student側POST
+# @app.route("teacher/<string:uuid>/status", methods=["POST"])
+
+# @app.route("teacher/<string:uuid>/statuses", methods=["POST"])
+
+# @app.route("teacher/<string:uuid>/delete/member", methods=["POST"])
+
+# @app.route("teacher/<string:uuid>/invitation", methods=["POST"])
+
+# @app.route("teacher/<string:uuid>/delete/class", methods=["POST"])
+
+# @app.route("teacher/<string:uuid>/setting", methods=["POST"])
+
+# #student側POST
+# @app.route("student/signup", methods=["POST"])
+
+# @app.route("student/login", methods=["POST"])
+
+# @app.route("student/<string:uuid>/")
+
+
+
 
 # run the app.
 if __name__ == "__main__":
