@@ -146,15 +146,10 @@ def teacher_signup():
     teacher_email = teacher.get("email")
     machine_id = teacher.get("machine")
     teacher_uuid = str(uuid.uuid4())
-    # user_id = teacher.get("id")
     teacher_password = teacher.get("password")
     b_password = bytes(teacher_password,"utf-8")
     salt = bcrypt.gensalt(rounds=12, prefix=b"2b")
     hash_password = bcrypt.hashpw(b_password,salt)
-    # auth.create_user_with_email_and_password(
-    #     email = teacher_email,
-    #     password = teacher_password
-    # )
     db.collection("teacher").document(teacher_uuid).set({
         "verification":False,
         "available":False,
