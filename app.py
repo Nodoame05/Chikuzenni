@@ -150,12 +150,13 @@ def teacher_signup():
     teacher_password = teacher.get("password")
     b_password = bytes(teacher_password,"utf-8")
     salt = bcrypt.gensalt(rounds=12, prefix=b"2b")
-    hash_password = str(bcrypt.hashpw(b_password,salt))
-    auth.create_user_with_email_and_password(
-        email = teacher_email,
-        password = teacher_password
-    )
+    hash_password = bcrypt.hashpw(b_password,salt)
+    # auth.create_user_with_email_and_password(
+    #     email = teacher_email,
+    #     password = teacher_password
+    # )
     db.collection("teacher").document(teacher_uuid).set({
+        "verification":False,
         "available":False,
         "email":teacher_email,
         "machine_id":machine_id,
@@ -166,9 +167,30 @@ def teacher_signup():
         "subject":[],
         "uuid":teacher_uuid,
     })
+    #requests.post("https://script.google.com/macros/s/AKfycby4a8UMh_gJZuO2I10zAK2_q2AUoAfuhGJxJS8ZrD_8AkAbd9TarFjd9jqsL1geryk/exec",headers="Content-Type: application/json",json={"body":"ボディ","email":teacher_email,"subject":"メールアドレス認証"})
     return jsonify({"message":"success"})
-
-# @app.route("/teacher/login", methods=["POST"])
+    
+@app.route("/teacher/login", methods=["POST"])
+def teacher_login():
+    teacher = request.get_json()
+    teacher_email = teacher.get("email")
+    all_teacher_data = db.collection("teacher").stream()
+    for teacher_data in all_teacher_data:
+        if teacher_data.get("email") == teacher_email:
+            if teacher_data.get("verification") == True:
+                teacher_password = bytes(teacher.get("password"),'UTF-8')
+                hash_password = teacher_data.get("password_hash")
+                if bcrypt.checkpw(teacher_password,hash_password):
+                    teacher_token = str(uuid.uuid4())
+                    db.collection("teacher").document(teacher_data.get("uuid")).update({
+                        "token":teacher_token
+                    })
+                    return jsonify({"token":teacher_token})
+                else:
+                    return jsonify({"message":"間違ったパスワード"})                
+            else:
+                return jsonify({"message":"認証の通っていないメールアドレス"})
+    return jsonify({"message":"間違ったメールアドレス"})
 
 # @app.route("teacher/<string:uuid>/status", methods=["POST"])
 
