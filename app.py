@@ -1,12 +1,10 @@
 from flask import Flask, request, jsonify, render_template, redirect, url_for, session
-import pyrebase, json, os, firebase_admin, uuid, bcrypt
+import pyrebase, os, firebase_admin, uuid, json, bcrypt, requests, re, invitation
 from firebase_admin import credentials, firestore, auth
 from requests.exceptions import RequestException, ConnectionError, HTTPError, Timeout
 from datetime import date, datetime
-
 app = Flask(__name__)
 
-#JSONの中身を辞書型に格納
 fs_dict = {
     "type":os.environ["FB_TYPE"],
     "project_id":os.environ["FB_PROJECt_ID"],
@@ -39,74 +37,97 @@ app.config['SECRET_KEY'] ="3782c00aae1e468f9809d8d34011a84d"
 def teacher_status(uuid):
     token = request.headers.get("token")
     teacher_data = db.collection("teacher").document(uuid).get()
-    if token == teacher_data.get("token"):
-        status = teacher_data.get("status")
-        status_list = teacher_data.get("status_list")
-        now_status = status_list[status]
-        return jsonify({"status":now_status})
-    return jsonify({"message":"アクセスが拒否されました。"}),403 
-
+    if token != teacher_data.get("token"):
+        return jsonify({"message":"アクセスが拒否されました。"}),403
+    status = teacher_data.get("status")
+    status_list = teacher_data.get("status_list")
+    now_status = status_list[status]
+    return jsonify({"status":now_status})
 
 @app.route("/teacher/<string:uuid>/statuses", methods=["GET"])
 def teacher_statuses(uuid):
     token = request.headers.get("token")
     teacher_data = db.collection("teacher").document(uuid).get()
-    if token == teacher_data.get("token"):
-        return jsonify({"statuses":teacher_data.get("status_list")})
-    return jsonify({"message":"アクセスが拒否されました。"}),403 
+    if token != teacher_data.get("token"):
+        return jsonify({"message":"アクセスが拒否されました。"}),403
+    return jsonify({"statuses":teacher_data.get("status_list")})
 
 
 @app.route("/teacher/<string:uuid>/subjects", methods=["GET"])
 def teacher_subjects(uuid):
     token = request.headers.get("token")
     teacher_data = db.collection("teacher").document(uuid).get()
-    if token == teacher_data.get("token"):
-        return teacher_data.get("subject")
-    return jsonify({"message":"アクセスが拒否されました。"}),403
+    all_subject_data = db.collection("subject").stream()
+    if token != teacher_data.get("token"):
+        return jsonify({"message":"アクセスが拒否されました。"}),403
+    uuid_list = []
+    response = []
+    teacher_subject_list = teacher_data.get("subject")
+    for teacher_subject_uuid in teacher_subject_list:
+        uuid_list.append(teacher_subject_uuid.get("uuid"))
+    for subject_data in all_subject_data:
+        for uuid in uuid_list:
+            if subject_data.get("uuid") == uuid:
+                response.append({"name":subject_data.get("name"),"uuid":subject_data.get("uuid"),"invitation":subject_data.get("invitation")})
+    return response
 
 
 @app.route("/teacher/<string:uuid>/names", methods=["GET"])
 def teacher_all(uuid):
     token = request.headers.get("token")
     teacher_data = db.collection("teacher").document(uuid).get()
-    if token == teacher_data.get("token"):
-        return jsonify({"name":teacher_data.get("name"),"email":teacher_data.get("email")})
-    return jsonify({"message":"アクセスが拒否されました。"}),403
+    if token != teacher_data.get("token"):
+        return jsonify({"message":"アクセスが拒否されました。"}),403
+    return jsonify({"name":teacher_data.get("name"),"email":teacher_data.get("email")})
 
 
 @app.route("/Machine/<string:uuid>", methods=["GET"])
 def machine_id(uuid):
     token = request.headers.get("token")
     teacher_data = db.collection("teacher").document(uuid).get()
-    if token == teacher_data.get("token"):
-        return jsonify({"id":teacher_data.get("machine_id")})
-    return jsonify({"message":"アクセスが拒否されました。"}),403
+    if token != teacher_data.get("token"):
+        return jsonify({"message":"アクセスが拒否されました。"}),403
+    return jsonify({"id":teacher_data.get("machine_id")})
 
 
 #student側GET
-@app.route("/student/<string:uuid>/teacherlist", methods=["GET"])
-def teacher_list(uuid):
-    token = request.headers.get("token")
-    student_data = db.collection("student").document(uuid).get()
-    if token == student_data.get("token"):
-        all_teacher_data = db.collection("teacher").stream()
-        response = []
-        for teacher_data in all_teacher_data:
-            status = teacher_data.get("status")
-            status_list = teacher_data.get("status_list")
-            now_status = status_list[status]
-            response.append({"name":teacher_data.get("name"),"uuid":teacher_data.get("uuid"),"status":now_status})
-        return response
-    return jsonify({"message":"アクセスが拒否されました。"}),403
+# @app.route("/student/<string:uuid>/teacherlist", methods=["GET"])
+# def teacher_list(uuid):
+#     token = request.headers.get("token")
+#     student_data = db.collection("student").document(uuid).get()
+#     if token != student_data.get("token"):
+#         return jsonify({"message":"アクセスが拒否されました。"}),403
+#     all_teacher_data = db.collection("teacher").stream()
+#     student_subject = student_data.get("subject")
+#     response = []
+#     student_uuid_list = []
+#     a = []   
+#     for student_subject_map in student_subject:
+#         student_uuid_list.append(student_subject_map.get("uuid"))
+#     leng = len(student_uuid_list)
+#     for lis_index in range(leng):
+#        # a.append(lis_index) 
+#         for teacher_data in all_teacher_data:
+#             teacher_subject = teacher_data.get("subject")
+#             a.append(lis_index)
+#             for teacher_subject_map in teacher_subject:
+#                 # a.append(uuid)
+#                 if teacher_subject_map.get("uuid") == student_uuid_list[lis_index]:
+#                     status = teacher_data.get("status")
+#                     status_list = teacher_data.get("status_list")
+#                     now_status = status_list[status]
+#                     response.append({"name":teacher_data.get("name"),"uuid":teacher_data.get("uuid"),"status":now_status})
+#         # a.append(uuid)
+#     return a
 
 
 @app.route("/student/<string:uuid>", methods=["GET"])
 def student_all(uuid):
     token = request.headers.get("token")
     student_data = db.collection("student").document(uuid).get()
-    if token == student_data.get("token"):
-        return jsonify({"name":student_data.get("name"),"email":student_data.get("email")})
-    return jsonify({"message":"アクセスが拒否されました。"}),403
+    if token != student_data.get("token"):
+        return jsonify({"message":"アクセスが拒否されました。"}),403
+    return jsonify({"name":student_data.get("name"),"email":student_data.get("email")})
 
 
 #subject GET
@@ -127,31 +148,40 @@ def student_list(uuid):
     all_token_list = student_token_list + teacher_token_list
     for token_data in all_token_list:
         if token == token_data:
-            response = []
-            all_student_data = db.collection("student").stream()
-            for student_data in all_student_data:
-                subject_list = student_data.get("subject")
-                for subject_map in subject_list:
-                    if uuid == subject_map.get("uuid"):
-                        response.append({"doc_id":student_data.id,"name":student_data.get("name"),"uuid":student_data.get("uuid")})
-            return response
-    return jsonify({"message":"アクセスが拒否されました。"}),403
-
+            break
+        else:
+            return jsonify({"message":"アクセスが拒否されました。"}),403
+    response = []
+    all_student_data = db.collection("student").stream()
+    for student_data in all_student_data:
+        subject_list = student_data.get("subject")
+        for subject_map in subject_list:
+                if uuid == subject_map.get("uuid"):
+                    response.append({"doc_id":student_data.id,"name":student_data.get("name"),"uuid":student_data.get("uuid")})
+    return response
     
+
+#machine側GET
+# @app.route("/machine", methods=["GET"])
+
+
+
 #teacher側POST
 @app.route("/teacher/signup", methods=["POST"])
 def teacher_signup():
     teacher = request.get_json()
     teacher_name = teacher.get("name")
-    teacher_email = teacher.get("email")
     machine_id = teacher.get("machine")
+    teacher_email = teacher.get("email")
+    #正規表現
+    # if :
+    #     return  ,406
     teacher_uuid = str(uuid.uuid4())
     teacher_password = teacher.get("password")
     b_password = bytes(teacher_password,"utf-8")
     salt = bcrypt.gensalt(rounds=12, prefix=b"2b")
     hash_password = bcrypt.hashpw(b_password,salt)
     db.collection("teacher").document(teacher_uuid).set({
-        "verification":False,
         "available":False,
         "email":teacher_email,
         "machine_id":machine_id,
@@ -161,51 +191,142 @@ def teacher_signup():
         "status_list":["在室","不在"],
         "subject":[],
         "uuid":teacher_uuid,
+        "created_at":firestore.SERVER_TIMESTAMP,
     })
     #requests.post("https://script.google.com/macros/s/AKfycby4a8UMh_gJZuO2I10zAK2_q2AUoAfuhGJxJS8ZrD_8AkAbd9TarFjd9jqsL1geryk/exec",headers="Content-Type: application/json",json={"body":"ボディ","email":teacher_email,"subject":"メールアドレス認証"})
-    return jsonify({"message":"success"})
+    return jsonify({"message":"success","email":teacher_email}),200
+    
     
 @app.route("/teacher/login", methods=["POST"])
 def teacher_login():
+    #データの読み込み
     teacher = request.get_json()
     teacher_email = teacher.get("email")
+    teacher_password = bytes(teacher.get("password"),'UTF-8')
     all_teacher_data = db.collection("teacher").stream()
+
+    #アカウント検索
     for teacher_data in all_teacher_data:
         if teacher_data.get("email") == teacher_email:
-            if teacher_data.get("verification") == True:
-                teacher_password = bytes(teacher.get("password"),'UTF-8')
-                hash_password = teacher_data.get("password_hash")
-                if bcrypt.checkpw(teacher_password,hash_password):
-                    teacher_token = str(uuid.uuid4())
-                    db.collection("teacher").document(teacher_data.get("uuid")).update({
-                        "token":teacher_token
-                    })
-                    return jsonify({"token":teacher_token})
-                else:
-                    return jsonify({"message":"間違ったパスワード"})                
-            else:
-                return jsonify({"message":"認証の通っていないメールアドレス"})
-    return jsonify({"message":"間違ったメールアドレス"})
+            break
+    else:
+        return jsonify({"message":"間違ったメールアドレス"})
+    
+    #アカウントデータの整理
+    hash_password = teacher_data.get("password_hash")
+    teacher_available = teacher_data.get("available")
 
-# @app.route("teacher/<string:uuid>/status", methods=["POST"])
+    #有効アカウントでなかったらエラー
+    if not(teacher_available):
+        return jsonify({"message":"認証の通っていないメールアドレス"})
 
-# @app.route("teacher/<string:uuid>/statuses", methods=["POST"])
+    #パスワードが間違っていたらエラー
+    if not(bcrypt.checkpw(teacher_password,hash_password)):
+        return jsonify({"message":"間違ったパスワード"})
 
-# @app.route("teacher/<string:uuid>/delete/member", methods=["POST"])
+    #全認証クリア時：トークン発行
+    teacher_token = str(uuid.uuid4())
+    db.collection("teacher").document(teacher_data.get("uuid")).update({
+        "token":teacher_token,
+        "updated_at":firestore.SERVER_TIMESTAMP,
+    })
 
-# @app.route("teacher/<string:uuid>/invitation", methods=["POST"])
+    return jsonify({"message":"success","token":teacher_token,"uuid":teacher_data.get("uuid")})
 
-# @app.route("teacher/<string:uuid>/delete/class", methods=["POST"])
 
-# @app.route("teacher/<string:uuid>/setting", methods=["POST"])
+# @app.route("teacher/forget", methods=["POST"])
 
+
+
+@app.route("/teacher/<string:uuid>/status/current", methods=["POST"])
+def change_current_status(uuid):
+    status = request.get_json()
+    token = request.headers.get("token")
+    teacher_data = db.collection("teacher").document(uuid).get()
+    if token != teacher_data.get("token"):
+        return jsonify({"message":"アクセスが拒否されました。"}),403
+    db.collection("teacher").document(uuid).update({
+        "status":status.get("status"),
+        "updated_at":firestore.SERVER_TIMESTAMP
+    })
+    return jsonify({"message":"success"})
+    
+    
+@app.route("/teacher/<string:uuid>/status/names", methods=["POST"])
+def change_status_names(uuid):
+    teacher_status_list = request.get_json()
+    token = request.headers.get("token")
+    teacher_data = db.collection("teacher").document(uuid).get()
+    if token != teacher_data.get("token"):
+        return jsonify({"message":"アクセスが拒否されました。"}),403
+    db.collection("teacher").document(uuid).update({
+        "status_list":firestore.DELETE_FIELD
+    })
+    db.collection("teacher").document(uuid).update({
+        "status_list":firestore.ArrayUnion([
+            "在室",
+            "不在",
+            teacher_status_list.get("3"),
+            teacher_status_list.get("4"),
+            teacher_status_list.get("5"),
+        ]),
+        "updated_at":firestore.SERVER_TIMESTAMP,
+    })
+    return jsonify({"message":"success"})
+
+
+@app.route("/teacher/<string:uuid>/create_subject", methods=["POST"])
+def create_subject(uuid):
+    subject_name =  request.get_json()
+    token = request.headers.get("token")
+    teacher_data = db.collection("teacher").document(uuid).get()
+    if token != teacher_data.get("token"):
+        return jsonify({"message":"アクセスが拒否されました。"}),403
+    subject_uuid = str(uuid.uuid4())
+    db.collection("subject").document(subject_uuid).set({
+        "name":subject_name.get("name"),
+        "invitation":invitation.create_inv(1),
+        "uuid":subject_uuid
+    })
+    db.collection("teacher").document(uuid).update({
+        "subject":firestore.ArrayUnion([{
+           "uuid":subject_uuid 
+        }]),
+        "updated_at":firestore.SERVER_TIMESTAMP,
+    })
+    
+    
+# @app.route("/teacher/<string:uuid>/delete_subject", methods=["POST"])
+
+# @app.route("/teacher/<string:uuid>/setting/name", methods=["POST"])
+
+# @app.route("/teacher/<string:uuid>/setting/machine", methods=["POST"])
+
+# @app.route("/teacher/<string:uuid>/setting/password", methods=["POST"])
+
+# @app.route("/teacher/<string:uuid>/forget_password", methods=["POST"])
+
+ 
 # #student側POST
-# @app.route("student/signup", methods=["POST"])
+# @app.route("/student/<string:uuid>/setting/name", methods=["POST"])
 
-# @app.route("student/login", methods=["POST"])
+# @app.route("/student/<string:uuid>/setting/password", methods=["POST"])
 
-# @app.route("student/<string:uuid>/")
+# @app.route("/student/<string:uuid>/forget_password", methods=["POST"])
 
+# @app.route("student/forget", methods=["POST"])
+
+
+# subject側POST
+# @app.route("/subject/<string:uuid>/add_student", methods=["POST"])
+
+# @app.route("/subject/<string:uuid>/delete_student", methods=["POST"])
+
+# @app.route("/subject/<string:uuid>/change_invitation", methods=["POST"])
+
+
+#machine側POST
+# @app.route("/machine", methods=["POST"])
 
 
 
