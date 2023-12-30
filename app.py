@@ -275,11 +275,11 @@ def change_status_names(uuid):
     return jsonify({"message":"success"})
 
 
-@app.route("/teacher/<string:uuid>/create_subject", methods=["POST"])
-def create_subject(uuid):
+@app.route("/teacher/<string:t_uuid>/create_subject", methods=["POST"])
+def create_subject(t_uuid):
     subject_name =  request.get_json()
     token = request.headers.get("token")
-    teacher_data = db.collection("teacher").document(uuid).get()
+    teacher_data = db.collection("teacher").document(t_uuid).get()
     if token != teacher_data.get("token"):
         return jsonify({"message":"アクセスが拒否されました。"}),403
     subject_uuid = str(uuid.uuid4())
@@ -288,12 +288,14 @@ def create_subject(uuid):
         "invitation":invitation.create_inv(1),
         "uuid":subject_uuid
     })
-    db.collection("teacher").document(uuid).update({
+    db.collection("teacher").document(t_uuid).update({
         "subject":firestore.ArrayUnion([{
            "uuid":subject_uuid 
         }]),
         "updated_at":firestore.SERVER_TIMESTAMP,
     })
+    return jsonify({"massage":"success"})
+    
     
     
 # @app.route("/teacher/<string:uuid>/delete_subject", methods=["POST"])
