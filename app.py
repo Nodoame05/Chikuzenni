@@ -297,8 +297,31 @@ def create_subject(t_uuid):
     return jsonify({"massage":"success"})
     
     
-    
-# @app.route("/teacher/<string:uuid>/delete_subject", methods=["POST"])
+@app.route("/teacher/<string:uuid>/delete_subject", methods=["POST"])
+def delete_subject(uuid):
+    token = request.headers.get("token")
+    teacher_data = db.collection("teacher").document(uuid).get()
+    if token != teacher_data.get("token"):
+        return jsonify({"message":"アクセスが拒否されました。"}),403
+    subject = request.get_json()
+    subject_uuid = subject.get("subject_uuid")
+    db.collection("subject").document(subject_uuid).delete()
+    db.collection("teacher").document(uuid).update({
+        "subject":firestore.ArrayRemove([{
+            "uuid":subject_uuid
+        }])
+    })
+    all_student_data = db.collection("student").stream()
+    for student_data in all_student_data:
+        student_subject = student_data.get("subject")
+        for student_subject_map in  student_subject:
+            if student_subject_map.get("uuid") == subject_uuid:
+                db.collection("student").document(student_data.get("uuid")).update({
+                    "subject":firestore.ArrayRemove([{
+                        "uuid":subject_uuid
+                    }])
+                })
+    return jsonify({"message":"success"})
 
 # @app.route("/teacher/<string:uuid>/setting/name", methods=["POST"])
 
