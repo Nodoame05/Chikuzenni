@@ -1,8 +1,6 @@
-from flask import Flask, request, jsonify, render_template, redirect, url_for, session
-import pyrebase, os, firebase_admin, uuid, json, bcrypt, requests, re, invitation
-from firebase_admin import credentials, firestore, auth
-from requests.exceptions import RequestException, ConnectionError, HTTPError, Timeout
-from datetime import date, datetime
+from flask import Flask, request, jsonify
+import pyrebase, os, firebase_admin, uuid, bcrypt, re, invitation
+from firebase_admin import credentials, firestore
 app = Flask(__name__)
 
 fs_dict = {
@@ -23,13 +21,11 @@ fa_dict = {
 }
 #firebase_Auth認証
 firebase = pyrebase.initialize_app(fa_dict)
-auth = firebase.auth()
 #firestore認証
 cred = credentials.Certificate(fs_dict)
 firebase_admin.initialize_app(cred)
 db = firestore.client()
 app.config['SECRET_KEY'] ="3782c00aae1e468f9809d8d34011a84d"
-# bcrypt = Bcrypt(app) 
 
 
 #teacher側GET
@@ -156,8 +152,14 @@ def student_list(uuid):
     
 
 #machine側GET
-# @app.route("/machine", methods=["GET"])
-
+@app.route("/machine", methods=["GET"])
+def now_status():
+    machine_id = request.headers.get("machine_ID")
+    all_teacher_data = db.collection("teacher").stream()
+    for teacher_data in all_teacher_data:
+        if teacher_data.get("machine_id") == machine_id:
+            return jsonify({"status":teacher_data.get("status")})
+    return jsonify({"message":"間違ったid"})
 
 
 #teacher側POST
@@ -168,8 +170,9 @@ def teacher_signup():
     machine_id = teacher.get("machine")
     teacher_email = teacher.get("email")
     #正規表現
-    # if :
-    #     return  ,406
+    pattern = "^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
+    if not re.fullmatch(pattern,teacher_email):
+        return  jsonify({"message":"間違ったメールアドレス形式"}),406
     teacher_uuid = str(uuid.uuid4())
     teacher_password = teacher.get("password")
     b_password = bytes(teacher_password,"utf-8")
@@ -345,7 +348,20 @@ def delete_subject(uuid):
 
 
 #machine側POST
-# @app.route("/machine", methods=["POST"])
+@app.route("/machine/", methods=["POST"])
+def change_status():
+    machine_id = request.headers.get("machine_ID")
+    all_teacher_data = db.collection("teacher").stream()
+    for teacher_data in all_teacher_data:
+        if teacher_data.get("machine_id") == machine_id:
+            json_data = request.get_json()
+            now_status = json_data.get("status")
+            teacher_id = teacher_data.get("uuid")
+            db.collection("teacher").document(teacher_id).update({
+                "status":now_status
+            })
+            return jsonify({"message":"success"})
+    return jsonify({"message":"間違ったid"})   
 
 
 
