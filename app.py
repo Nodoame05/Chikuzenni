@@ -486,17 +486,45 @@ def setting_student_password(uuid):
 
 
 # subject側POST
-# @app.route("/subject/<string:uuid>/add_student/", methods=["POST"])
+@app.route("/subject/<string:uuid>/add_student/", methods=["POST"])
+def add_student(uuid):
+    request_json = request.get_json()
+    student_uuid = request_json.get("student")
+    db.collection("student").document(student_uuid).update({
+        "subject":firestore.ArrayUnion([{
+           "uuid":uuid 
+        }]),
+        "updated_at":firestore.SERVER_TIMESTAMP,
+    })
+    return jsonify({"message":"success"})
 
 
+@app.route("/subject/<string:uuid>/delete_students/", methods=["POST"])
+def delete_students(uuid):
+    request_json = request.get_json()
+    student_uuid_list = request_json.get("student")
+    for student_uuid in student_uuid_list:
+        db.collection("student").document(student_uuid).update({
+            "subject":firestore.ArrayRemove([{
+                "uuid":uuid
+            }]),
+            "updated_at":firestore.SERVER_TIMESTAMP,
+        })
+    return jsonify({"message":"success"})
 
-# @app.route("/subject/<string:uuid>/delete_student/", methods=["POST"])
 
-
-
-# @app.route("/subject/<string:uuid>/change_invitation/", methods=["POST"])
-
-
+@app.route("/subject/<string:uuid>/change_invitation/", methods=["POST"])
+def change_invitation(uuid):
+    request_json = request.get_json()
+    pre_invitation = request_json.get("pre_invitation")
+    subject_data = db.collection("subject").document(uuid).get()
+    if subject_data.get("invitation") != pre_invitation:
+        return jsonify({"message":"間違ったinvitation"})
+    new_invitation = invitation.create_inv(1)
+    db.collection("subject").document(uuid).update({
+        "invitation":new_invitation
+    })
+    return jsonify({"message":"success","new_invitation":new_invitation})
 
 
 #machine側POST
