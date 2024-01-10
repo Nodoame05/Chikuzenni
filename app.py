@@ -29,7 +29,7 @@ app.config['SECRET_KEY'] ="3782c00aae1e468f9809d8d34011a84d"
 
 
 #teacher側GET
-@app.route("/teacher/<string:uuid>/status", methods=["GET"])
+@app.route("/teacher/<string:uuid>/status/", methods=["GET"])
 def teacher_status(uuid):
     token = request.headers.get("token")
     teacher_data = db.collection("teacher").document(uuid).get()
@@ -40,7 +40,7 @@ def teacher_status(uuid):
     now_status = status_list[status]
     return jsonify({"status":now_status})
 
-@app.route("/teacher/<string:uuid>/statuses", methods=["GET"])
+@app.route("/teacher/<string:uuid>/statuses/", methods=["GET"])
 def teacher_statuses(uuid):
     token = request.headers.get("token")
     teacher_data = db.collection("teacher").document(uuid).get()
@@ -49,7 +49,7 @@ def teacher_statuses(uuid):
     return jsonify({"statuses":teacher_data.get("status_list")})
 
 
-@app.route("/teacher/<string:uuid>/subjects", methods=["GET"])
+@app.route("/teacher/<string:uuid>/subjects/", methods=["GET"])
 def teacher_subjects(uuid):
     token = request.headers.get("token")
     teacher_data = db.collection("teacher").document(uuid).get()
@@ -68,7 +68,7 @@ def teacher_subjects(uuid):
     return response
 
 
-@app.route("/teacher/<string:uuid>/names", methods=["GET"])
+@app.route("/teacher/<string:uuid>/names/", methods=["GET"])
 def teacher_all(uuid):
     token = request.headers.get("token")
     teacher_data = db.collection("teacher").document(uuid).get()
@@ -77,7 +77,7 @@ def teacher_all(uuid):
     return jsonify({"name":teacher_data.get("name"),"email":teacher_data.get("email")})
 
 
-@app.route("/Machine/<string:uuid>", methods=["GET"])
+@app.route("/Machine/<string:uuid>/", methods=["GET"])
 def machine_id(uuid):
     token = request.headers.get("token")
     teacher_data = db.collection("teacher").document(uuid).get()
@@ -111,7 +111,7 @@ def teacher_list(uuid):
     return response
 
 
-@app.route("/student/<string:uuid>", methods=["GET"])
+@app.route("/student/<string:uuid>/", methods=["GET"])
 def student_all(uuid):
     token = request.headers.get("token")
     student_data = db.collection("student").document(uuid).get()
@@ -121,7 +121,7 @@ def student_all(uuid):
 
 
 #subject GET
-@app.route("/subject/<string:uuid>/students", methods=["GET"])
+@app.route("/subject/<string:uuid>/students/", methods=["GET"])
 def student_list(uuid):
     token = request.headers.get("token")
     #teacher&student document取得
@@ -159,11 +159,12 @@ def now_status():
     for teacher_data in all_teacher_data:
         if teacher_data.get("machine_id") == machine_id:
             return jsonify({"status":teacher_data.get("status")})
-    return jsonify({"message":"間違ったid"})
+    return jsonify({"message":"間違ったid"})    
+    
 
 
 #teacher側POST
-@app.route("/teacher/signup", methods=["POST"])
+@app.route("/teacher/signup/", methods=["POST"])
 def teacher_signup():
     teacher = request.get_json()
     teacher_name = teacher.get("name")
@@ -193,8 +194,7 @@ def teacher_signup():
     #requests.post("https://script.google.com/macros/s/AKfycby4a8UMh_gJZuO2I10zAK2_q2AUoAfuhGJxJS8ZrD_8AkAbd9TarFjd9jqsL1geryk/exec",headers="Content-Type: application/json",json={"body":"ボディ","email":teacher_email,"subject":"メールアドレス認証"})
     return jsonify({"message":"success","email":teacher_email}),200
     
-    
-@app.route("/teacher/login", methods=["POST"])
+@app.route("/teacher/login/", methods=["POST"])
 def teacher_login():
     #データの読み込み
     teacher = request.get_json()
@@ -230,12 +230,9 @@ def teacher_login():
 
     return jsonify({"message":"success","token":teacher_token,"uuid":teacher_data.get("uuid")})
 
+# @app.route("teacher/forget/", methods=["POST"])
 
-# @app.route("teacher/forget", methods=["POST"])
-
-
-
-@app.route("/teacher/<string:uuid>/status/current", methods=["POST"])
+@app.route("/teacher/<string:uuid>/status/current/", methods=["POST"])
 def change_current_status(uuid):
     status = request.get_json()
     token = request.headers.get("token")
@@ -247,9 +244,9 @@ def change_current_status(uuid):
         "updated_at":firestore.SERVER_TIMESTAMP
     })
     return jsonify({"message":"success"})
-    
-    
-@app.route("/teacher/<string:uuid>/status/names", methods=["POST"])
+
+
+@app.route("/teacher/<string:uuid>/status/names/", methods=["POST"])
 def change_status_names(uuid):
     teacher_status_list = request.get_json()
     token = request.headers.get("token")
@@ -272,7 +269,7 @@ def change_status_names(uuid):
     return jsonify({"message":"success"})
 
 
-@app.route("/teacher/<string:t_uuid>/create_subject", methods=["POST"])
+@app.route("/teacher/<string:t_uuid>/create_subject/", methods=["POST"])
 def create_subject(t_uuid):
     subject_name =  request.get_json()
     token = request.headers.get("token")
@@ -292,9 +289,9 @@ def create_subject(t_uuid):
         "updated_at":firestore.SERVER_TIMESTAMP,
     })
     return jsonify({"massage":"success"})
-    
-    
-@app.route("/teacher/<string:uuid>/delete_subject", methods=["POST"])
+
+
+@app.route("/teacher/<string:uuid>/delete_subject/", methods=["POST"])
 def delete_subject(uuid):
     token = request.headers.get("token")
     teacher_data = db.collection("teacher").document(uuid).get()
@@ -306,9 +303,10 @@ def delete_subject(uuid):
     db.collection("teacher").document(uuid).update({
         "subject":firestore.ArrayRemove([{
             "uuid":subject_uuid
-        }])
+        }]),
+        "updated_at":firestore.SERVER_TIMESTAMP,
     })
-    all_student_data = db.collection("student").stream()
+    all_student_data = db.collection("student/").stream()
     for student_data in all_student_data:
         student_subject = student_data.get("subject")
         for student_subject_map in  student_subject:
@@ -316,7 +314,8 @@ def delete_subject(uuid):
                 db.collection("student").document(student_data.get("uuid")).update({
                     "subject":firestore.ArrayRemove([{
                         "uuid":subject_uuid
-                    }])
+                    }]),
+                    "updated_at":firestore.SERVER_TIMESTAMP,
                 })
     return jsonify({"message":"success"})
 
@@ -374,10 +373,73 @@ def setting_teacher_password(uuid):
     return jsonify({"message":"success"})
 
 
-# @app.route("/teacher/<string:uuid>/forget_password", methods=["POST"])
+# @app.route("/teacher/<string:uuid>/forget_password/", methods=["POST"])
 
  
 # #student側POST
+@app.route("/student/signup/", methods=["POST"])
+def student_signup():
+    student = request.get_json()
+    student_name = student.get("name")
+    student_email = student.get("email")
+    #正規表現
+    pattern = "^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
+    if not re.fullmatch(pattern,student_email):
+        return  jsonify({"message":"間違ったメールアドレス形式"}),406
+    student_uuid = str(uuid.uuid4())
+    teacher_password = student.get("password")
+    b_password = bytes(teacher_password,"utf-8")
+    salt = bcrypt.gensalt(rounds=12, prefix=b"2b")
+    hash_password = bcrypt.hashpw(b_password,salt)
+    db.collection("student").document(student_uuid).set({
+        "available":False,
+        "email":student_email,
+        "name":student_name,
+        "password_hash":hash_password,
+        "subject":[],
+        "uuid":student_uuid,
+        "created_at":firestore.SERVER_TIMESTAMP,
+    })
+    #requests.post("https://script.google.com/macros/s/AKfycby4a8UMh_gJZuO2I10zAK2_q2AUoAfuhGJxJS8ZrD_8AkAbd9TarFjd9jqsL1geryk/exec",headers="Content-Type: application/json",json={"body":"ボディ","email":teacher_email,"subject":"メールアドレス認証"})
+    return jsonify({"message":"success","email":student_email}),200
+    
+    
+@app.route("/student/login/", methods=["POST"])
+def student_login():
+    #データの読み込み
+    student = request.get_json()
+    student_email = student.get("email")
+    student_password = bytes(student.get("password"),'UTF-8')
+    all_student_data = db.collection("student").stream()
+
+    #アカウント検索
+    for student_data in all_student_data:
+        if student_data.get("email") == student_email:
+            break
+    else:
+        return jsonify({"message":"間違ったメールアドレス"})
+    
+    #アカウントデータの整理
+    hash_password = student_data.get("password_hash")
+    student_available = student_data.get("available")
+
+    #有効アカウントでなかったらエラー
+    if not(student_available):
+        return jsonify({"message":"認証の通っていないメールアドレス"})
+
+    #パスワードが間違っていたらエラー
+    if not(bcrypt.checkpw(student_password,hash_password)):
+        return jsonify({"message":"間違ったパスワード"})
+
+    #全認証クリア時：トークン発行
+    student_token = str(uuid.uuid4())
+    db.collection("student").document(student_data.get("uuid")).update({
+        "token":student_token,
+        "updated_at":firestore.SERVER_TIMESTAMP,
+    })
+
+    return jsonify({"message":"success","token":student_token,"uuid":student_data.get("uuid")})
+
 @app.route("/student/<string:uuid>/setting/name/", methods=["POST"])
 def setting_student_name(uuid):
     token = request.headers.get("token")
@@ -416,17 +478,25 @@ def setting_student_password(uuid):
     return jsonify({"message":"success"})
 
 
-# @app.route("/student/<string:uuid>/forget_password", methods=["POST"])
+# @app.route("/student/<string:uuid>/forget_password/", methods=["POST"])
 
-# @app.route("student/forget", methods=["POST"])
+
+
+# @app.route("student/forget/", methods=["POST"])
 
 
 # subject側POST
-# @app.route("/subject/<string:uuid>/add_student", methods=["POST"])
+# @app.route("/subject/<string:uuid>/add_student/", methods=["POST"])
 
-# @app.route("/subject/<string:uuid>/delete_student", methods=["POST"])
 
-# @app.route("/subject/<string:uuid>/change_invitation", methods=["POST"])
+
+# @app.route("/subject/<string:uuid>/delete_student/", methods=["POST"])
+
+
+
+# @app.route("/subject/<string:uuid>/change_invitation/", methods=["POST"])
+
+
 
 
 #machine側POST
@@ -444,7 +514,6 @@ def change_status():
             })
             return jsonify({"message":"success"})
     return jsonify({"message":"間違ったid"})   
-
 
 
 # run the app.
