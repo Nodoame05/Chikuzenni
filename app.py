@@ -320,19 +320,101 @@ def delete_subject(uuid):
                 })
     return jsonify({"message":"success"})
 
-# @app.route("/teacher/<string:uuid>/setting/name", methods=["POST"])
 
-# @app.route("/teacher/<string:uuid>/setting/machine", methods=["POST"])
+@app.route("/teacher/<string:uuid>/setting/name/", methods=["POST"])
+def setting_teacher_name(uuid):
+    token = request.headers.get("token")
+    teacher_data = db.collection("teacher").document(uuid).get()
+    if token != teacher_data.get("token"):
+        return jsonify({"message":"アクセスが拒否されました。"}),403
+    teacher = request.get_json()
+    teacher_name = teacher.get("name")
+    db.collection("teacher").document(uuid).update({
+        "name":teacher_name,
+        "updated_at":firestore.SERVER_TIMESTAMP,
+    })
+    return jsonify({"message":"success"})
 
-# @app.route("/teacher/<string:uuid>/setting/password", methods=["POST"])
+
+@app.route("/teacher/<string:uuid>/setting/machine/", methods=["POST"])
+def setting_machine(uuid):
+    token = request.headers.get("token")
+    teacher_data = db.collection("teacher").document(uuid).get()
+    if token != teacher_data.get("token"):
+        return jsonify({"message":"アクセスが拒否されました。"}),403
+    teacher = request.get_json()
+    machine_id = teacher.get("machine")
+    db.collection("teacher").document(uuid).update({
+        "machine_id":machine_id,
+        "updated_at":firestore.SERVER_TIMESTAMP,
+    })
+    return jsonify({"message":"success"})
+
+
+@app.route("/teacher/<string:uuid>/setting/password/", methods=["POST"])
+def setting_teacher_password(uuid):
+    token = request.headers.get("token")
+    teacher_data = db.collection("teacher").document(uuid).get()
+    if token != teacher_data.get("token"):
+        return jsonify({"message":"アクセスが拒否されました。"}),403
+    teacher = request.get_json()
+    get_pre_password = bytes(teacher.get("pre_password"),'UTF-8')
+    teacher_data = db.collection("teacher").document(uuid).get()
+    teacher_pre_password = teacher_data.get("password_hash")
+    if not(bcrypt.checkpw(get_pre_password,teacher_pre_password)):
+        return jsonify({"message":"間違ったパスワード"})
+    new_password = teacher.get("new_password")
+    b_password = bytes(new_password,"utf-8")
+    salt = bcrypt.gensalt(rounds=12, prefix=b"2b")
+    hash_password = bcrypt.hashpw(b_password,salt)
+    db.collection("teacher").document(uuid).update({
+        "password_hash":hash_password,
+        "updated_at":firestore.SERVER_TIMESTAMP,
+    })
+    return jsonify({"message":"success"})
+
 
 # @app.route("/teacher/<string:uuid>/forget_password", methods=["POST"])
 
  
 # #student側POST
-# @app.route("/student/<string:uuid>/setting/name", methods=["POST"])
+@app.route("/student/<string:uuid>/setting/name/", methods=["POST"])
+def setting_student_name(uuid):
+    token = request.headers.get("token")
+    student_data = db.collection("student").document(uuid).get()
+    if token != student_data.get("token"):
+        return jsonify({"message":"アクセスが拒否されました。"}),403
+    student = request.get_json()
+    student_name = student.get("name")
+    db.collection("student").document(uuid).update({
+        "name":student_name,
+        "updated_at":firestore.SERVER_TIMESTAMP,
+    })
+    return jsonify({"message":"success"})
 
-# @app.route("/student/<string:uuid>/setting/password", methods=["POST"])
+
+@app.route("/student/<string:uuid>/setting/password/", methods=["POST"])
+def setting_student_password(uuid):
+    token = request.headers.get("token")
+    student_data = db.collection("teacher").document(uuid).get()
+    if token != student_data.get("token"):
+        return jsonify({"message":"アクセスが拒否されました。"}),403
+    student = request.get_json()
+    get_pre_password = bytes(student.get("pre_password"),'UTF-8')
+    student_data = db.collection("student").document(uuid).get()
+    student_pre_password = student_data.get("password_hash")
+    if not(bcrypt.checkpw(get_pre_password,student_pre_password)):
+        return jsonify({"message":"間違ったパスワード"})
+    new_password = student.get("new_password")
+    b_password = bytes(new_password,"utf-8")
+    salt = bcrypt.gensalt(rounds=12, prefix=b"2b")
+    hash_password = bcrypt.hashpw(b_password,salt)
+    db.collection("student").document(uuid).update({
+        "password_hash":hash_password,
+        "updated_at":firestore.SERVER_TIMESTAMP,
+    })
+    return jsonify({"message":"success"})
+
 
 # @app.route("/student/<string:uuid>/forget_password", methods=["POST"])
 
