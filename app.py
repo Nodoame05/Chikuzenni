@@ -91,34 +91,28 @@ def machine_id(uuid):
 
 
 #student側GET
-# @app.route("/student/<string:uuid>/teacherlist", methods=["GET"])
-# def teacher_list(uuid):
-#     token = request.headers.get("token")
-#     student_data = db.collection("student").document(uuid).get()
-#     if token != student_data.get("token"):
-#         return jsonify({"message":"アクセスが拒否されました。"}),403
-#     all_teacher_data = db.collection("teacher").stream()
-#     student_subject = student_data.get("subject")
-#     response = []
-#     student_uuid_list = []
-#     a = []   
-#     for student_subject_map in student_subject:
-#         student_uuid_list.append(student_subject_map.get("uuid"))
-#     leng = len(student_uuid_list)
-#     for lis_index in range(leng):
-#        # a.append(lis_index) 
-#         for teacher_data in all_teacher_data:
-#             teacher_subject = teacher_data.get("subject")
-#             a.append(lis_index)
-#             for teacher_subject_map in teacher_subject:
-#                 # a.append(uuid)
-#                 if teacher_subject_map.get("uuid") == student_uuid_list[lis_index]:
-#                     status = teacher_data.get("status")
-#                     status_list = teacher_data.get("status_list")
-#                     now_status = status_list[status]
-#                     response.append({"name":teacher_data.get("name"),"uuid":teacher_data.get("uuid"),"status":now_status})
-#         # a.append(uuid)
-#     return a
+@app.route("/student/<string:uuid>/teacherlist/", methods=["GET"])
+def teacher_list(uuid):
+    token = request.headers.get("token")
+    student_data = db.collection("student").document(uuid).get()
+    if token != student_data.get("token"):
+        return jsonify({"message":"アクセスが拒否されました。"}),403
+    student_subject = student_data.get("subject")
+    response = []
+    student_uuid_list = []
+    for student_subject_map in student_subject:
+        student_uuid_list.append(student_subject_map.get("uuid"))
+    for student_uuid in student_uuid_list:
+        all_teacher_data = db.collection("teacher").stream()
+        for teacher_data in all_teacher_data:
+            teacher_subject = teacher_data.get("subject")
+            for teacher_subject_map in teacher_subject:
+                if teacher_subject_map.get("uuid") == student_uuid:
+                    status = teacher_data.get("status")
+                    status_list = teacher_data.get("status_list")
+                    now_status = status_list[status]
+                    response.append({"name":teacher_data.get("name"),"uuid":teacher_data.get("uuid"),"status":now_status})
+    return response
 
 
 @app.route("/student/<string:uuid>", methods=["GET"])
