@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
-import pyrebase, os, firebase_admin, uuid, bcrypt, re, invitation
+import pyrebase, os, firebase_admin, uuid, bcrypt, re, invitation, requests
 from firebase_admin import credentials, firestore
+from datetime import datetime, timedelta
 app = Flask(__name__)
 
 fs_dict = {
@@ -39,6 +40,7 @@ def teacher_status(uuid):
     status_list = teacher_data.get("status_list")
     now_status = status_list[status]
     return jsonify({"status":now_status})
+
 
 @app.route("/teacher/<string:uuid>/statuses/", methods=["GET"])
 def teacher_statuses(uuid):
@@ -149,7 +151,7 @@ def student_list(uuid):
                 if uuid == subject_map.get("uuid"):
                     response.append({"doc_id":student_data.id,"name":student_data.get("name"),"uuid":student_data.get("uuid")})
     return response
-    
+
 
 #machine側GET
 @app.route("/machine", methods=["GET"])
@@ -159,8 +161,7 @@ def now_status():
     for teacher_data in all_teacher_data:
         if teacher_data.get("machine_id") == machine_id:
             return jsonify({"status":teacher_data.get("status")})
-    return jsonify({"message":"間違ったid"})    
-    
+    return jsonify({"message":"間違ったid"})
 
 
 #teacher側POST
@@ -191,9 +192,10 @@ def teacher_signup():
         "uuid":teacher_uuid,
         "created_at":firestore.SERVER_TIMESTAMP,
     })
-    #requests.post("https://script.google.com/macros/s/AKfycby4a8UMh_gJZuO2I10zAK2_q2AUoAfuhGJxJS8ZrD_8AkAbd9TarFjd9jqsL1geryk/exec",headers="Content-Type: application/json",json={"body":"ボディ","email":teacher_email,"subject":"メールアドレス認証"})
+    requests.post("https://script.google.com/macros/s/AKfycby4a8UMh_gJZuO2I10zAK2_q2AUoAfuhGJxJS8ZrD_8AkAbd9TarFjd9jqsL1geryk/exec",headers="Content-Type: application/json",json={"body":"ボディ","email":teacher_email,"subject":"メールアドレス認証"})
     return jsonify({"message":"success","email":teacher_email}),200
-    
+
+
 @app.route("/teacher/login/", methods=["POST"])
 def teacher_login():
     #データの読み込み
@@ -230,7 +232,31 @@ def teacher_login():
 
     return jsonify({"message":"success","token":teacher_token,"uuid":teacher_data.get("uuid")})
 
-# @app.route("teacher/forget/", methods=["POST"])
+
+@app.route("/teacher/forget/", methods=["POST"])
+def teacher_forget():
+    request_json = request.get_json()
+    teacher_email = request_json.get("email")
+    all_teacher_data = db.collection("teacher").stream()
+    for teacher_data in all_teacher_data:
+        if teacher_data.get("email") == teacher_email:
+            break
+    else:
+        return jsonify({"message":"間違ったメールアドレス"})
+    secret = str(uuid.uuid4())
+    db.collection("teacher").document(teacher_data.get("uuid")).update({
+        "updated_at":firestore.SERVER_TIMESTAMP
+    })
+    expired = db.collection("teacher").document(teacher_data.get("uuid")).get().get("updated_at").replace(tzinfo=None)
+    expired = expired + timedelta(minutes=10)
+    db.collection("teacher").document(teacher_data.get("uuid")).update({
+        "secret":{"secret":secret,"expired_at":expired},
+        "updated_at":firestore.SERVER_TIMESTAMP
+    })
+    url = "https://teacher/forget/:uuid?secret=" + secret
+    requests.post(url,headers="Content-Type: application/json",json={"body":"ボディ","email":teacher_email,"subject":"パスワード変更"})
+    return jsonify({"message":"success"})
+
 
 @app.route("/teacher/<string:uuid>/status/current/", methods=["POST"])
 def change_current_status(uuid):
@@ -306,7 +332,7 @@ def delete_subject(uuid):
         }]),
         "updated_at":firestore.SERVER_TIMESTAMP,
     })
-    all_student_data = db.collection("student/").stream()
+    all_student_data = db.collection("student").stream()
     for student_data in all_student_data:
         student_subject = student_data.get("subject")
         for student_subject_map in  student_subject:
@@ -400,10 +426,10 @@ def student_signup():
         "uuid":student_uuid,
         "created_at":firestore.SERVER_TIMESTAMP,
     })
-    #requests.post("https://script.google.com/macros/s/AKfycby4a8UMh_gJZuO2I10zAK2_q2AUoAfuhGJxJS8ZrD_8AkAbd9TarFjd9jqsL1geryk/exec",headers="Content-Type: application/json",json={"body":"ボディ","email":teacher_email,"subject":"メールアドレス認証"})
+    requests.post("https://script.google.com/macros/s/AKfycby4a8UMh_gJZuO2I10zAK2_q2AUoAfuhGJxJS8ZrD_8AkAbd9TarFjd9jqsL1geryk/exec",headers="Content-Type: application/json",json={"body":"ボディ","email":student_email,"subject":"メールアドレス認証"})
     return jsonify({"message":"success","email":student_email}),200
-    
-    
+
+
 @app.route("/student/login/", methods=["POST"])
 def student_login():
     #データの読み込み
@@ -439,6 +465,7 @@ def student_login():
     })
 
     return jsonify({"message":"success","token":student_token,"uuid":student_data.get("uuid")})
+
 
 @app.route("/student/<string:uuid>/setting/name/", methods=["POST"])
 def setting_student_name(uuid):
@@ -534,14 +561,16 @@ def change_status():
     all_teacher_data = db.collection("teacher").stream()
     for teacher_data in all_teacher_data:
         if teacher_data.get("machine_id") == machine_id:
-            json_data = request.get_json()
-            now_status = json_data.get("status")
-            teacher_id = teacher_data.get("uuid")
-            db.collection("teacher").document(teacher_id).update({
-                "status":now_status
-            })
-            return jsonify({"message":"success"})
-    return jsonify({"message":"間違ったid"})   
+            break
+    else:
+        return jsonify({"message":"間違ったid"})
+    json_data = request.get_json()
+    now_status = json_data.get("status")
+    teacher_id = teacher_data.get("uuid")
+    db.collection("teacher").document(teacher_id).update({
+        "status":now_status
+    })
+    return jsonify({"message":"success"})  
 
 
 # run the app.
