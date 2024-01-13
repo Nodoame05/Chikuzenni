@@ -421,9 +421,11 @@ def teacher_forget_password(uuid):
         "password_hash":hash_password,
         "updated_at":firestore.SERVER_TIMESTAMP,
         "token":firestore.DELETE_FIELD,
+        "secret":firestore.DELETE_FIELD,
     })
     return jsonify({"message":"success"})
  
+
 # #student側POST
 @app.route("/student/signup/", methods=["POST"])
 def student_signup():
@@ -531,7 +533,29 @@ def setting_student_password(uuid):
 
 
 
-# @app.route("student/forget/", methods=["POST"])
+@app.route("student/forget/", methods=["POST"])
+def student_forget():
+    request_json = request.get_json()
+    student_email = request_json.get("email")
+    all_student_data = db.collection("student").stream()
+    for student_data in all_student_data:
+        if student_data.get("email") == student_email:
+            break
+    else:
+        return jsonify({"message":"間違ったメールアドレス"})
+    secret = str(uuid.uuid4())
+    db.collection("student").document(student_data.get("uuid")).update({
+        "updated_at":firestore.SERVER_TIMESTAMP
+    })
+    expired = db.collection("student").document(student_data.get("uuid")).get().get("updated_at").replace(tzinfo=None)
+    expired = expired + timedelta(minutes=10)
+    db.collection("student").document(student_data.get("uuid")).update({
+        "secret":{"secret":secret,"expired_at":expired},
+        "updated_at":firestore.SERVER_TIMESTAMP
+    })
+    url = "https://student/forget/:uuid?secret=" + secret
+    requests.post(url,headers="Content-Type: application/json",json={"body":"ボディ","email":student_email,"subject":"パスワード変更"})
+    return jsonify({"message":"success"})
 
 
 # subject側POST
