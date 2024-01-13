@@ -529,8 +529,31 @@ def setting_student_password(uuid):
     return jsonify({"message":"success"})
 
 
-# @app.route("/student/<string:uuid>/forget_password/", methods=["POST"])
-
+@app.route("/student/<string:uuid>/forget_password/", methods=["POST"])
+def student_forget_password(uuid):
+    request_json = request.get_json()
+    request_secret = request_json.get("secret")
+    student_secret = db.collection("student").document(uuid).get().get("secret")
+    secret_secret = student_secret.get("secret")
+    if request_secret != secret_secret:
+        return jsonify({"message":"間違ったsecret"})
+    now = datetime.now()
+    teacher_expired = student_secret.get("expired_at")
+    expired_datetime = datetime.fromtimestamp(teacher_expired.timestamp())
+    sub_time = expired_datetime - now
+    if sub_time.total_seconds() < 0:
+        return jsonify({"message":"期限切れのsecret"})
+    request_password = request_json.get("password")
+    b_password = bytes(request_password,"utf-8")
+    salt = bcrypt.gensalt(rounds=12, prefix=b"2b")
+    hash_password = bcrypt.hashpw(b_password,salt)
+    db.collection("student").document(uuid).update({
+        "password_hash":hash_password,
+        "updated_at":firestore.SERVER_TIMESTAMP,
+        "token":firestore.DELETE_FIELD,
+        "secret":firestore.DELETE_FIELD,
+    })
+    return jsonify({"message":"success"})
 
 
 @app.route("student/forget/", methods=["POST"])
