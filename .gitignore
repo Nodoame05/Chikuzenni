@@ -1,1 +1,6 @@
 _pycache_
+Lib
+Scripts
+share
+pyvenv.cfg
+requirement.txt
