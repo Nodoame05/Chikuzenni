@@ -165,11 +165,8 @@ def student_list(uuid):
     for teacher_token_data in all_teacher_data:
         teacher_token_list.append(teacher_token_data.get("token"))
     all_token_list = student_token_list + teacher_token_list
-    for token_data in all_token_list:
-        if token == token_data:
-            break
-        else:
-            return jsonify({"message":"アクセスが拒否されました。"}),401
+    if token not in all_token_list:
+        return jsonify({"message":"アクセスが拒否されました。"}),401
 
     response = []
     all_student_data = db.collection("student").stream()
