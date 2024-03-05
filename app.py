@@ -374,18 +374,19 @@ def create_subject(t_uuid):
         return jsonify({"message":"アクセスが拒否されました。"}),401
 
     subject_uuid = str(uuid.uuid4())
-    db.collection("subject").document(subject_uuid).set({
+    new_subject = {
         "name":subject_name,
         "invitation":invitation.create_inv(1),
         "uuid":subject_uuid
-    })
+    }
+    db.collection("subject").document(subject_uuid).set(new_subject)
     db.collection("teacher").document(t_uuid).update({
         "subject":firestore.ArrayUnion([{
            "uuid":subject_uuid 
         }]),
         "updated_at":firestore.SERVER_TIMESTAMP,
     })
-    return jsonify({"massage":"success"}),200
+    return jsonify({"massage":"success", "data":new_subject}),200
 
 
 @app.route("/teacher/<string:uuid>/delete_subject/", methods=["POST"])
