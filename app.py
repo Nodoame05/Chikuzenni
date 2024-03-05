@@ -226,7 +226,28 @@ def teacher_signup():
         "name":teacher_name,
         "password_hash":hash_password,
         "status":1,
-        "status_list":["在室","不在"],
+        "status_list": [
+            {
+                "status": "在室",
+                "color": "#11d10a",
+            },
+            {
+                "status": "帰宅",
+                "color": "#d10a0a",
+            },
+            {
+                "status": "外出",
+                "color": "#e6d705",
+            },
+            {
+                "status": "学内",
+                "color": "#e6d705",
+            },
+            {
+                "status": "授業",
+                "color": "#e6d705",
+            },
+],
         "subject":[],
         "uuid":teacher_uuid,
         "created_at":firestore.SERVER_TIMESTAMP,
