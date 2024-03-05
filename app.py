@@ -378,7 +378,7 @@ def create_subject(t_uuid):
 
     subject_uuid = str(uuid.uuid4())
     db.collection("subject").document(subject_uuid).set({
-        "name":subject_name.get("name"),
+        "name":subject_name,
         "invitation":invitation.create_inv(1),
         "uuid":subject_uuid
     })
