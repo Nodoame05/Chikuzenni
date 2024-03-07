@@ -7,7 +7,7 @@ app = Flask(__name__)
 fs_dict = {
     "type":os.environ["FB_TYPE"],
     "project_id":os.environ["FB_PROJECt_ID"],
-    "private_key":os.environ["FB_PRIVATE_KEY"],
+    "private_key": os.environ["FB_PRIVATE_KEY"].replace(r"\n", "\n"),
     "client_email":os.environ["FB_CLIENT_EMAIL"],
     "token_uri":os.environ["FB_TOKEN_URI"]
 }
