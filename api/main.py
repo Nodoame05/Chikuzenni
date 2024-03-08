@@ -269,7 +269,7 @@ def teacher_signup():
             "name": teacher_name,
             "password_hash": hash_password,
             "status": 1,
-            "status_list": ["在室", "不在", "初期値1", "初期値2", "初期値3"],
+            "status_list": ["在室", "不在", "会議", "すぐ戻ります", "帰宅"],
             "subject": [],
             "uuid": teacher_uuid,
             "created_at": firestore.SERVER_TIMESTAMP,
@@ -863,6 +863,27 @@ def add_student(uuid):
     )
     return jsonify({"message": "success"}), 200
 
+@app.route("/subject/add_student/", methods=["POST"])
+def neo_add_student():
+    request_json = request.get_json()
+    student_uuid = request_json.get("student")
+    invitation_id = request_json.get("invitation")
+    if student_uuid == None:
+        return jsonify({"message": "studentがありません。"}), 400
+    if invitation_id == None:
+        return jsonify({"message": "invitationがありません。"}), 400
+#####
+    found_subject = db.collection("subject").where("invitation","==",invitation_id).get()
+    
+    print(found_subject)
+    print(type(found_subject))
+    db.collection("student").document(found_subject[0].get("uuid")).update(
+        {
+            "subject": firestore.ArrayUnion([{"uuid": uuid}]),
+            "updated_at": firestore.SERVER_TIMESTAMP,
+        }
+    )
+    return jsonify({"message": "success"}), 200
 
 @app.route("/subject/<string:uuid>/delete_students/", methods=["POST"])
 def delete_students(uuid):
