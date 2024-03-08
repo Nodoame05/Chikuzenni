@@ -877,7 +877,7 @@ def neo_add_student():
     
     print(found_subject)
     print(type(found_subject))
-    db.collection("student").document(found_subject[0].get("uuid")).update(
+    db.collection("student").document(found_subject.get("uuid")).update(
         {
             "subject": firestore.ArrayUnion([{"uuid": uuid}]),
             "updated_at": firestore.SERVER_TIMESTAMP,
